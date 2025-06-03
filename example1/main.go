@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/bytedance/gopkg/util/logger"
 	"github.com/zhouhailin/freeswitch-esl-go/esl"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -41,21 +43,30 @@ type EslConnectionListener struct {
 }
 
 func (l *EslConnectionListener) ConnectFailure(c *esl.Client) {
+	fmt.Println("ConnectFailure")
 }
 func (l *EslConnectionListener) Connected(c *esl.Client) {
+	fmt.Println("Connected")
+
 }
 func (l *EslConnectionListener) Authenticated(authenticated bool, c *esl.Client) {
+	fmt.Println("Authenticated : " + strconv.FormatBool(authenticated))
 }
 func (l *EslConnectionListener) Disconnected(c *esl.Client) {
+	fmt.Println("Disconnected")
 }
 
 func main() {
 	eventListener := EslEventListener{}
 	eslConnectionListener := EslConnectionListener{}
+	env, b := os.LookupEnv("PATH")
+	println(env, b)
 	client := esl.NewClient("127.0.0.1", 8021, "ClueCon", 5, &esl.Options{
 		Level: logger.LevelTrace,
 	})
 	fmt.Println(client)
+	client.AddEventListener(&eventListener)
+	client.AddConnectionListener(&eslConnectionListener)
 	//client.Connect()
 	err := client.Connect()
 	if err != nil {
@@ -68,8 +79,6 @@ func main() {
 		return
 	}
 	fmt.Println(subscriptions)
-	client.AddEventListener(&eventListener)
-	client.AddConnectionListener(&eslConnectionListener)
 	//client.Close()
 	fmt.Println(client)
 	time.Sleep(200 * time.Second)

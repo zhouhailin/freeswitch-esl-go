@@ -13,8 +13,6 @@ type SocketConnection struct {
 	netpoll.Connection
 	msg                    chan *EslMessage
 	mtx                    sync.Mutex
-	eventListeners         []IEslEventListener
-	connectionListeners    []IEslConnectionListener
 	authenticationResponse *CommandResponse
 	authenticatorResponded bool
 	authenticated          bool
@@ -23,20 +21,6 @@ type SocketConnection struct {
 
 func (socket *SocketConnection) CanSend() bool {
 	return socket != nil && socket.Connection != nil && socket.IsActive() && socket.authenticated
-}
-
-func (socket *SocketConnection) AddEventListener(listener IEslEventListener) {
-	if socket.eventListeners == nil {
-		socket.eventListeners = *new([]IEslEventListener)
-	}
-	socket.eventListeners = append(socket.eventListeners, listener)
-}
-
-func (socket *SocketConnection) AddConnectionListener(listener IEslConnectionListener) {
-	if socket.connectionListeners == nil {
-		socket.connectionListeners = *new([]IEslConnectionListener)
-	}
-	socket.connectionListeners = append(socket.connectionListeners, listener)
 }
 
 // SendSyncApiCommand Sends a NextSWITCH API command to the server and blocks, waiting for an immediate response from the server.

@@ -12,11 +12,13 @@ import (
 
 type Client struct {
 	SocketConnection
-	Network           string
-	Address           string
-	Password          string
-	TimeoutSeconds    int
-	reconnectAttempts int
+	Network             string
+	Address             string
+	Password            string
+	TimeoutSeconds      int
+	reconnectAttempts   int
+	eventListeners      []IEslEventListener
+	connectionListeners []IEslConnectionListener
 }
 
 type Options struct {
@@ -93,12 +95,28 @@ func NewClient(host string, port uint, password string, timeoutSeconds int, newO
 		options = *newOptions
 	}
 	return &Client{
-		Network:           "tcp",
-		Address:           net.JoinHostPort(host, strconv.Itoa(int(port))),
-		Password:          password,
-		TimeoutSeconds:    timeoutSeconds,
-		reconnectAttempts: 0,
+		Network:             "tcp",
+		Address:             net.JoinHostPort(host, strconv.Itoa(int(port))),
+		Password:            password,
+		TimeoutSeconds:      timeoutSeconds,
+		reconnectAttempts:   0,
+		eventListeners:      nil,
+		connectionListeners: nil,
 	}
+}
+
+func (client *Client) AddEventListener(listener IEslEventListener) {
+	if client.eventListeners == nil {
+		client.eventListeners = *new([]IEslEventListener)
+	}
+	client.eventListeners = append(client.eventListeners, listener)
+}
+
+func (client *Client) AddConnectionListener(listener IEslConnectionListener) {
+	if client.connectionListeners == nil {
+		client.connectionListeners = *new([]IEslConnectionListener)
+	}
+	client.connectionListeners = append(client.connectionListeners, listener)
 }
 
 func (client *Client) Connect() error {
@@ -134,8 +152,6 @@ func (client *Client) Connect() error {
 	client.SocketConnection = SocketConnection{
 		Connection:             connection,
 		msg:                    make(chan *EslMessage),
-		eventListeners:         nil,
-		connectionListeners:    nil,
 		authenticationResponse: nil,
 		authenticatorResponded: false,
 		authenticated:          false,
