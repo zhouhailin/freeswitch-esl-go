@@ -31,7 +31,7 @@ func (socket *SocketConnection) SendSyncApiCommand(command, arg string) (*EslMes
 	}
 	var sb strings.Builder
 	if command != "" {
-		sb.WriteString("bgapi ")
+		sb.WriteString("api ")
 		sb.WriteString(command)
 	}
 	if arg != "" {
