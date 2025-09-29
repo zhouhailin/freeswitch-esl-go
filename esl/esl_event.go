@@ -72,7 +72,7 @@ func parsePlainBody(event *EslEvent, rawBodyLines *[]string, decodeEventHeaders 
 				}
 			} else {
 				if isTraceEnabled() {
-					logger.Tracef("addEventHeaders : %s\n", name, value)
+					logger.Tracef("addEventHeaders : %s : %s\n", name, value)
 				}
 				event.eventHeaders[name] = value
 			}
