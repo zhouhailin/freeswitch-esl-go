@@ -46,6 +46,79 @@ func main() {
 }
 ```
 
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/bytedance/gopkg/util/logger"
+	"github.com/zhouhailin/freeswitch-esl-go/esl"
+	"os"
+	"strconv"
+	"time"
+)
+
+type EslEventListener struct {
+}
+
+func (l *EslEventListener) EventReceived(event *esl.EslEvent) error {
+	fmt.Println("######## eventReceived : " + event.ToString())
+	return nil
+}
+
+func (l *EslEventListener) BackgroundJobResultReceived(event *esl.EslEvent) error {
+	fmt.Println("######## backgroundJobResultReceived : " + event.ToString())
+	return nil
+}
+
+type EslConnectionListener struct {
+}
+
+func (l *EslConnectionListener) ConnectFailure(c *esl.Client) {
+	fmt.Println("ConnectFailure")
+}
+func (l *EslConnectionListener) Connected(client *esl.Client) {
+	fmt.Println("Connected")
+}
+func (l *EslConnectionListener) Authenticated(authenticated bool, client *esl.Client) {
+	fmt.Println("Authenticated : " + strconv.FormatBool(authenticated))
+	if authenticated {
+		subscriptions, err := client.SetEventSubscriptions("plain", "ALL")
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			return
+		}
+		fmt.Println(subscriptions)
+	}
+}
+func (l *EslConnectionListener) Disconnected(c *esl.Client) {
+	fmt.Println("Disconnected")
+}
+
+func main() {
+	eventListener := EslEventListener{}
+	eslConnectionListener := EslConnectionListener{}
+	env, b := os.LookupEnv("PATH")
+	println(env, b)
+	client := esl.NewClient("127.0.0.1", 8021, "ClueCon", 5, &esl.Options{
+		AutoReconnection:         true,
+		ReconnectIntervalSeconds: 5,
+		Level:                    logger.LevelDebug,
+	})
+	fmt.Println(client)
+	client.AddEventListener(&eventListener)
+	client.AddConnectionListener(&eslConnectionListener)
+
+	err := client.Connect()
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
+	//client.Close()
+	fmt.Println(client)
+	time.Sleep(200 * time.Second)
+}
+```
+
 ## Netpoll
 
 [Netpoll][Netpoll] is a high-performance non-blocking I/O networking framework, which focused on RPC scenarios,

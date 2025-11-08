@@ -72,7 +72,7 @@ func main() {
 		AutoReconnection:         true,
 		ReconnectIntervalSeconds: 3,
 		MaxReconnectAttempts:     100,
-		Level:                    logger.LevelTrace,
+		Level:                    logger.LevelDebug,
 	})
 	fmt.Println(client)
 	client.AddEventListener(&eventListener)
@@ -85,5 +85,4 @@ func main() {
 	//client.Close()
 	fmt.Println(client)
 	time.Sleep(200 * time.Second)
-
 }
