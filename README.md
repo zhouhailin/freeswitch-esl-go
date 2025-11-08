@@ -3,6 +3,15 @@
 [![License](https://img.shields.io/github/license/zhouhailin/freeswitch-esl-go)](https://github.com/zhouhailin/freeswitch-esl-go/blob/master/LICENSE)
 [![Go 1.15 Ready](https://img.shields.io/badge/Go%201.15-Ready-green.svg?style=flat)]()
 
+## Features
+
+* **Already**
+    - Inbound Client
+    - Linux, macOS (operating system)
+
+* **Unsupported**
+    - Windows (operating system)
+
 ## Quick Start
 
 ```
