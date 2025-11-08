@@ -173,6 +173,6 @@ func handleRudeRejection(c *Client) error {
 	if isDebugEnabled() {
 		logger.Debugf("Received rude rejection")
 	}
-	c.listener.disconnected(c)
+	c.rudeRejection = true
 	return nil
 }

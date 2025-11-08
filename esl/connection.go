@@ -16,6 +16,7 @@ type SocketConnection struct {
 	authenticationResponse *CommandResponse
 	authenticatorResponded bool
 	authenticated          bool
+	rudeRejection          bool
 	listener               IEslProtocolListener
 }
 

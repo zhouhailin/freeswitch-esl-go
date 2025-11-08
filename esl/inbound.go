@@ -128,19 +128,29 @@ func (client *Client) Connect() error {
 		if err != nil {
 			return err
 		}
+		time.Sleep(250 * time.Millisecond)
 	}
 	// use default
 	connection, err := netpoll.DialConnection(client.Network, client.Address, time.Duration(client.TimeoutSeconds)*time.Second)
 	if err != nil {
-		go func() {
-			client.canReconnect()
-			if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
+		if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
+			go func() {
 				for _, listener := range client.connectionListeners {
 					listener.ConnectFailure(client)
 				}
-			}
-		}()
+			}()
+		}
+		client.canReconnect()
 		return err
+	}
+	client.SocketConnection = SocketConnection{
+		Connection:             connection,
+		msg:                    make(chan *EslMessage),
+		authenticationResponse: nil,
+		authenticatorResponded: false,
+		authenticated:          false,
+		rudeRejection:          false,
+		listener:               ProtocolListener{},
 	}
 	if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
 		go func() {
@@ -149,14 +159,7 @@ func (client *Client) Connect() error {
 			}
 		}()
 	}
-	client.SocketConnection = SocketConnection{
-		Connection:             connection,
-		msg:                    make(chan *EslMessage),
-		authenticationResponse: nil,
-		authenticatorResponded: false,
-		authenticated:          false,
-		listener:               ProtocolListener{},
-	}
+	//
 	err = connection.SetOnRequest(func(ctx context.Context, connection netpoll.Connection) error {
 		var err error
 		if isTraceEnabled() {
@@ -176,26 +179,24 @@ func (client *Client) Connect() error {
 	if err != nil {
 		return err
 	}
-
+	// connection closed callback function
 	err = connection.AddCloseCallback(func(connection netpoll.Connection) error {
 		logger.Infof("[%v] connection closed\n", connection.RemoteAddr())
-		client.authenticationResponse = nil
-		client.authenticatorResponded = false
-		client.authenticated = false
 		close(client.msg)
 		// Notify connection is disconnect
 		if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
 			go func() {
-				client.canReconnect()
 				for _, listener := range client.connectionListeners {
 					listener.Disconnected(client)
 				}
 			}()
 		}
+		// reconnect
+		client.canReconnect()
 		return nil
 	})
 
-	for !client.authenticatorResponded {
+	for !client.rudeRejection && !client.authenticatorResponded {
 		time.Sleep(250 * time.Millisecond)
 	}
 
@@ -206,7 +207,9 @@ func (client *Client) Connect() error {
 			}
 		}()
 	}
-	if !client.authenticated {
+	if client.rudeRejection {
+		return errors.New("client is rejected by acl")
+	} else if !client.authenticated {
 		return errors.New("Authentication failed: " + client.authenticationResponse.GetReplyText())
 	}
 	return err
@@ -215,6 +218,7 @@ func (client *Client) Connect() error {
 func (client *Client) canReconnect() {
 	if options.AutoReconnection && options.ReconnectIntervalSeconds > 0 {
 		time.AfterFunc(time.Duration(options.ReconnectIntervalSeconds)*time.Second, func() {
+			logger.Info("Reconnecting ...")
 			err := client.Connect()
 			if err != nil {
 				logger.Error("Reconnection failure, cause ", err)
