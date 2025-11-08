@@ -132,14 +132,14 @@ func (client *Client) Connect() error {
 	// use default
 	connection, err := netpoll.DialConnection(client.Network, client.Address, time.Duration(client.TimeoutSeconds)*time.Second)
 	if err != nil {
-		// client.tryToReconnect()
-		if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
-			go func() {
+		go func() {
+			client.canReconnect()
+			if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
 				for _, listener := range client.connectionListeners {
 					listener.ConnectFailure(client)
 				}
-			}()
-		}
+			}
+		}()
 		return err
 	}
 	if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
@@ -186,6 +186,7 @@ func (client *Client) Connect() error {
 		// Notify connection is disconnect
 		if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
 			go func() {
+				client.canReconnect()
 				for _, listener := range client.connectionListeners {
 					listener.Disconnected(client)
 				}
@@ -211,7 +212,7 @@ func (client *Client) Connect() error {
 	return err
 }
 
-func (client *Client) tryToReconnect() error {
+func (client *Client) canReconnect() {
 	if options.AutoReconnection && options.ReconnectIntervalSeconds > 0 {
 		time.AfterFunc(time.Duration(options.ReconnectIntervalSeconds)*time.Second, func() {
 			err := client.Connect()
@@ -220,5 +221,4 @@ func (client *Client) tryToReconnect() error {
 			}
 		})
 	}
-	return nil
 }
