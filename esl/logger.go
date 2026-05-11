@@ -1,15 +1,15 @@
 package esl
 
-import "github.com/bytedance/gopkg/util/logger"
+import "github.com/panjf2000/gnet/v2/pkg/logging"
 
 func isTraceEnabled() bool {
-	return logger.LevelTrace >= options.Level
+	return logging.DebugLevel >= options.Level
 }
 
 func isDebugEnabled() bool {
-	return logger.LevelDebug >= options.Level
+	return logging.DebugLevel >= options.Level
 }
 
 func isInfoEnabled() bool {
-	return logger.LevelInfo >= options.Level
+	return logging.InfoLevel >= options.Level
 }

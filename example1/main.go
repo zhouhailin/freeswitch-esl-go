@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/bytedance/gopkg/util/logger"
-	"github.com/zhouhailin/freeswitch-esl-go/esl"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/zhouhailin/freeswitch-esl-go/esl"
 )
 
 type EslEventListener struct {
@@ -62,7 +62,7 @@ func main() {
 	env, b := os.LookupEnv("PATH")
 	println(env, b)
 	client := esl.NewClient("127.0.0.1", 8021, "ClueCon", 5, &esl.Options{
-		Level: logger.LevelTrace,
+		Level: esl.DebugLevel,
 	})
 	fmt.Println(client)
 	client.AddEventListener(&eventListener)

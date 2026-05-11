@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/bytedance/gopkg/util/logger"
-	"github.com/zhouhailin/freeswitch-esl-go/esl"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/zhouhailin/freeswitch-esl-go/esl"
 )
 
 type EslEventListener struct {
@@ -72,7 +72,7 @@ func main() {
 		AutoReconnection:         true,
 		ReconnectIntervalSeconds: 3,
 		MaxReconnectAttempts:     100,
-		Level:                    logger.LevelDebug,
+		Level:                    esl.DebugLevel,
 	})
 	fmt.Println(client)
 	client.AddEventListener(&eventListener)

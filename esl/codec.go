@@ -1,72 +1,95 @@
 package esl
 
 import (
+	"bytes"
 	"errors"
-	"github.com/bytedance/gopkg/util/logger"
-	"github.com/cloudwego/netpoll"
+	"io"
 	"strconv"
 	"strings"
+
+	"github.com/panjf2000/gnet/v2"
+	"github.com/panjf2000/gnet/v2/pkg/logging"
 )
 
-// decode .
-func decode(reader netpoll.Reader, m *EslMessage) (err error) {
-	//
-	// read '\n' terminated lines until reach a single '\n'
-	//
-	reachedDoubleLF := false
-	for !reachedDoubleLF {
-		// this will read or fail
-		line, err := reader.Until(NEW_LINE)
-		if err != nil {
-			logger.Error("Decode Failure")
-			return err
-		}
-		headerLine := string(line[:len(line)-1])
+// decode reads a complete ESL message from the gnet connection buffer.
+// Returns io.ErrUnexpectedEOF if the buffer doesn't contain a complete message yet.
+// On success, consumes the message bytes from the buffer.
+func decode(c gnet.Conn, m *EslMessage) error {
+	buf, err := c.Peek(-1)
+	if err != nil {
+		return err
+	}
+	if len(buf) == 0 {
+		return io.ErrUnexpectedEOF
+	}
+
+	// Find end of headers (double LF)
+	headerEndIdx := bytes.Index(buf, []byte("\n\n"))
+	if headerEndIdx < 0 {
+		return io.ErrUnexpectedEOF
+	}
+
+	// Parse header lines
+	headerBlock := buf[:headerEndIdx]
+	headerLines := bytes.Split(headerBlock, []byte("\n"))
+	for _, lineBytes := range headerLines {
+		headerLine := string(lineBytes)
 		if isDebugEnabled() {
-			logger.Debugf("read header line %s\n", headerLine)
+			logging.Debugf("read header line %s\n", headerLine)
 		}
 		if len(headerLine) == 0 {
-			reachedDoubleLF = true
-		} else {
-			headerParts := strings.SplitN(headerLine, ":", 2)
-			headerName := fromLiteral(headerParts[0])
-			if headerName == "" {
-				return errors.New("Unhandled ESL header [" + headerParts[0] + "]")
-			} else {
-				m.headers[headerName] = strings.TrimSpace(headerParts[1])
-			}
+			continue
 		}
+		headerParts := strings.SplitN(headerLine, ":", 2)
+		if len(headerParts) < 2 {
+			return errors.New("Unhandled ESL header [" + headerParts[0] + "]")
+		}
+		headerName := fromLiteral(headerParts[0])
+		if headerName == "" {
+			return errors.New("Unhandled ESL header [" + headerParts[0] + "]")
+		}
+		m.headers[headerName] = strings.TrimSpace(headerParts[1])
 	}
+
+	// Calculate total message length (headers + \n\n)
+	totalLen := headerEndIdx + 2
 
 	//
 	// have read all headers - check for content-length
 	//
 	if lv := m.GetHeaderValue(CONTENT_LENGTH); lv != "" {
 		if isDebugEnabled() {
-			logger.Debug("have content-length, decoding body ..")
+			logging.Debugf("have content-length, decoding body ..\n")
 		}
 		l, err := strconv.Atoi(lv)
 		if err != nil {
-			logger.Errorf("Unable to get size of content-length: %s\n", lv)
+			logging.Errorf("Unable to get size of content-length: %s\n", lv)
 			return err
 		}
 		m.contentLength = l
-		if isTraceEnabled() {
-			logger.Trace("Decode Body ...")
+		if totalLen+l > len(buf) {
+			return io.ErrUnexpectedEOF
 		}
-		bytes, err := reader.ReadBinary(l)
+		bodyBytes := buf[totalLen : totalLen+l]
 		if isDebugEnabled() {
-			logger.Debugf("read %d body bytes\n", len(bytes))
+			logging.Debugf("read %d body bytes\n", len(bodyBytes))
 		}
-		if err != nil {
-			return err
-		}
-		for _, bodyLine := range strings.Split(string(bytes[:len(bytes)-1]), LINE_TERMINATOR) {
-			m.addBodyLine(bodyLine)
-			if isTraceEnabled() {
-				logger.Tracef("read body line %s\n", bodyLine)
+		if len(bodyBytes) > 0 {
+			bodyStr := string(bodyBytes)
+			if bodyStr[len(bodyStr)-1] == '\n' {
+				bodyStr = bodyStr[:len(bodyStr)-1]
+			}
+			for _, bodyLine := range strings.Split(bodyStr, LINE_TERMINATOR) {
+				m.addBodyLine(bodyLine)
+				if isTraceEnabled() {
+					logging.Debugf("read body line %s\n", bodyLine)
+				}
 			}
 		}
+		totalLen += l
 	}
-	return nil
+
+	// Consume the full message from the buffer
+	_, err = c.Next(totalLen)
+	return err
 }

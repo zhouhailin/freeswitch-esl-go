@@ -1,9 +1,10 @@
 package esl
 
 import (
-	"github.com/bytedance/gopkg/util/logger"
 	"strconv"
 	"strings"
+
+	"github.com/panjf2000/gnet/v2/pkg/logging"
 )
 
 // EslMessage - Basic FreeSWITCH Event Socket messages from the server are decoded into this data object.
@@ -69,7 +70,7 @@ func (m *EslMessage) GetBodyLines() *[]string {
 // AddHeader - Used by the {@link EslMessageDecoder}.
 func (m *EslMessage) addHeader(name Name, value string) {
 	if isTraceEnabled() {
-		logger.Tracef("adding header %s %s\n", name, value)
+		logging.Debugf("adding header %s %s\n", name, value)
 	}
 	m.headers[name] = value
 }

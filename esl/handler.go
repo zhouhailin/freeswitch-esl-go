@@ -2,8 +2,9 @@ package esl
 
 import (
 	"errors"
-	"github.com/bytedance/gopkg/util/logger"
 	"strings"
+
+	"github.com/panjf2000/gnet/v2/pkg/logging"
 )
 
 func messageReceived(c *Client, m *EslMessage) error {
@@ -31,15 +32,11 @@ func (socket *SocketConnection) sendSyncSingleLineCommand(command string) (*EslM
 		return nil, errors.New("connection is null.")
 	}
 	if isTraceEnabled() {
-		logger.Tracef("sendSyncSingleLineCommand command : %s\n", command)
+		logging.Debugf("sendSyncSingleLineCommand command : %s\n", command)
 	}
 	socket.mtx.Lock()
 	defer socket.mtx.Unlock()
-	_, err := socket.Writer().WriteString(command + MESSAGE_TERMINATOR)
-	if err != nil {
-		return nil, err
-	}
-	err = socket.Writer().Flush()
+	_, err := socket.conn.Write([]byte(command + MESSAGE_TERMINATOR))
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +60,7 @@ func (socket *SocketConnection) sendSyncMultiLineCommand(commandLines *[]string)
 	sb.WriteString(LINE_TERMINATOR)
 	socket.mtx.Lock()
 	defer socket.mtx.Unlock()
-	_, err := socket.Writer().WriteString(sb.String())
-	if err != nil {
-		return nil, err
-	}
-	err = socket.Writer().Flush()
+	_, err := socket.conn.Write([]byte(sb.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -94,48 +87,45 @@ func (socket *SocketConnection) sendAsyncCommand(command string) (*string, error
 
 func handleEslMessage(contentType string, c *Client, m *EslMessage) error {
 	if isDebugEnabled() {
-		logger.Debugf("Received message: %s\n", m.ToString())
+		logging.Debugf("Received message: %s\n", m.ToString())
 	}
 	switch contentType {
 	case API_RESPONSE:
 		if isDebugEnabled() {
-			logger.Debugf("Api response received: %s\n", m.ToString())
+			logging.Debugf("Api response received: %s\n", m.ToString())
 		}
 		c.msg <- m
-		break
 	case COMMAND_REPLY:
 		if isDebugEnabled() {
-			logger.Debugf("Command reply received: %s\n", m.ToString())
+			logging.Debugf("Command reply received: %s\n", m.ToString())
 		}
 		c.msg <- m
-		break
 	case AUTH_REQUEST:
 		if isDebugEnabled() {
-			logger.Debugf("Auth request received: %s\n", m.ToString())
+			logging.Debugf("Auth request received: %s\n", m.ToString())
 		}
 		go func() {
 			_ = handleAuthRequest(c)
 		}()
-		break
 	case TEXT_DISCONNECT_NOTICE:
 		if isInfoEnabled() {
-			logger.Infof("Disconnect notice received: %s\n", m.ToString())
+			logging.Infof("Disconnect notice received: %s\n", m.ToString())
 		}
 		return handleDisconnectionNotice(c)
 	case TEXT_RUDE_REJECTION:
 		if isInfoEnabled() {
-			logger.Infof("Rude rejection received: %s\n", m.ToString())
+			logging.Infof("Rude rejection received: %s\n", m.ToString())
 		}
 		return handleRudeRejection(c)
 	default:
-		logger.Warnf("Unexpected message content type %s", contentType)
+		logging.Warnf("Unexpected message content type %s", contentType)
 	}
 	return nil
 }
 
 func handleEslEvent(c *Client, e *EslEvent) error {
 	if isDebugEnabled() {
-		logger.Debugf("Received event: %s\n", e.ToString())
+		logging.Debugf("Received event: %s\n", e.ToString())
 	}
 	c.listener.eventReceived(c, e)
 	return nil
@@ -143,27 +133,27 @@ func handleEslEvent(c *Client, e *EslEvent) error {
 
 func handleAuthRequest(c *Client) error {
 	if isDebugEnabled() {
-		logger.Debugf("Auth requested, sending [auth %s]\n", "*****")
+		logging.Debugf("Auth requested, sending [auth %s]\n", "*****")
 	}
 	response, err := c.sendSyncSingleLineCommand("auth " + c.Password)
 	if err != nil {
 		return err
 	}
 	if isDebugEnabled() {
-		logger.Debugf("Auth response %s", response.ToString())
+		logging.Debugf("Auth response %s", response.ToString())
 	}
 	if COMMAND_REPLY == response.GetContentType() {
 		c.listener.authResponseReceived(c, NewCommandResponse("auth "+c.Password, response))
 		return nil
 	} else {
-		logger.Errorf("Bad auth response message %s\n", response)
+		logging.Errorf("Bad auth response message %s\n", response)
 		return errors.New("Incorrect auth response")
 	}
 }
 
 func handleDisconnectionNotice(c *Client) error {
 	if isDebugEnabled() {
-		logger.Debug("Received disconnection notice")
+		logging.Debugf("Received disconnection notice\n")
 	}
 	c.listener.disconnected(c)
 	return nil
@@ -171,7 +161,7 @@ func handleDisconnectionNotice(c *Client) error {
 
 func handleRudeRejection(c *Client) error {
 	if isDebugEnabled() {
-		logger.Debugf("Received rude rejection")
+		logging.Debugf("Received rude rejection\n")
 	}
 	c.rudeRejection = true
 	return nil

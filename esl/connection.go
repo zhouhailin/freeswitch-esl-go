@@ -2,26 +2,28 @@ package esl
 
 import (
 	"errors"
-	"github.com/cloudwego/netpoll"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/panjf2000/gnet/v2"
 )
 
 // SocketConnection Main connection against ESL - Gotta add more description here
 type SocketConnection struct {
-	netpoll.Connection
+	conn                   gnet.Conn
 	msg                    chan *EslMessage
 	mtx                    sync.Mutex
 	authenticationResponse *CommandResponse
 	authenticatorResponded bool
 	authenticated          bool
 	rudeRejection          bool
+	active                 bool
 	listener               IEslProtocolListener
 }
 
 func (socket *SocketConnection) CanSend() bool {
-	return socket != nil && socket.Connection != nil && socket.IsActive() && socket.authenticated
+	return socket != nil && socket.conn != nil && socket.active && socket.authenticated
 }
 
 // SendSyncApiCommand Sends a NextSWITCH API command to the server and blocks, waiting for an immediate response from the server.
@@ -226,7 +228,10 @@ func (socket *SocketConnection) Close() (*CommandResponse, error) {
 
 // RemoteAddr - Will return originator address known as net.RemoteAddr()
 func (socket *SocketConnection) RemoteAddr() net.Addr {
-	return socket.RemoteAddr()
+	if socket.conn != nil {
+		return socket.conn.RemoteAddr()
+	}
+	return nil
 }
 
 func (socket *SocketConnection) CheckConnected() error {

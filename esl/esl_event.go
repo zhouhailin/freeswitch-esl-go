@@ -2,10 +2,11 @@ package esl
 
 import (
 	"errors"
-	"github.com/bytedance/gopkg/util/logger"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/panjf2000/gnet/v2/pkg/logging"
 )
 
 // EslEvent FreeSWITCH Event Socket <strong>events</strong> are decoded into this data object.
@@ -61,18 +62,18 @@ func parsePlainBody(event *EslEvent, rawBodyLines *[]string, decodeEventHeaders 
 			if decodeEventHeaders && strings.Contains(value, "%") {
 				decodedValue, err := url.QueryUnescape(value)
 				if err != nil {
-					logger.Warnf("Could not URL decode %s\n", value)
+					logging.Warnf("Could not URL decode %s\n", value)
 					event.eventHeaders[name] = value
 				} else {
 					if isTraceEnabled() {
-						logger.Tracef("decoded from: %s\n", value)
-						logger.Tracef("decoded   to: %s\n", decodedValue)
+						logging.Debugf("decoded from: %s\n", value)
+						logging.Debugf("decoded   to: %s\n", decodedValue)
 					}
 					event.eventHeaders[name] = decodedValue
 				}
 			} else {
 				if isTraceEnabled() {
-					logger.Tracef("addEventHeaders : %s : %s\n", name, value)
+					logging.Debugf("addEventHeaders : %s : %s\n", name, value)
 				}
 				event.eventHeaders[name] = value
 			}
