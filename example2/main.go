@@ -42,7 +42,7 @@ func (l *EslEventListener) BackgroundJobResultReceived(event *esl.EslEvent) erro
 type EslConnectionListener struct {
 }
 
-func (l *EslConnectionListener) ConnectFailure(c *esl.Client) {
+func (l *EslConnectionListener) ConnectFailure(client *esl.Client) {
 	fmt.Println("ConnectFailure")
 }
 func (l *EslConnectionListener) Connected(client *esl.Client) {
@@ -59,7 +59,7 @@ func (l *EslConnectionListener) Authenticated(authenticated bool, client *esl.Cl
 		fmt.Println(subscriptions)
 	}
 }
-func (l *EslConnectionListener) Disconnected(c *esl.Client) {
+func (l *EslConnectionListener) Disconnected(client *esl.Client) {
 	fmt.Println("Disconnected")
 }
 

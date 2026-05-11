@@ -7,11 +7,7 @@
 
 * **Already**
     - Inbound Client
-    - Linux, macOS (operating system)
-    - Windows (development and testing only)
-
-* **Unsupported**
-    - Windows (production environment)
+    - Linux, macOS, Windows (operating system)
 
 ## Quick Start
 

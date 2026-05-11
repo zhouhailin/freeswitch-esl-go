@@ -28,14 +28,14 @@ type Options struct {
 	AutoReconnection         bool
 	ReconnectIntervalSeconds int
 	MaxReconnectAttempts     int
-	Level                    logging.Level
+	Level                    Level
 }
 
 var options = Options{
 	AutoReconnection:         true,
 	ReconnectIntervalSeconds: 5,
 	MaxReconnectAttempts:     0,
-	Level:                    logging.InfoLevel,
+	Level:                    InfoLevel,
 }
 
 type ProtocolListener struct{}
