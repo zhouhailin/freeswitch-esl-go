@@ -238,5 +238,5 @@ func (socket *SocketConnection) CheckConnected() error {
 	if socket.CanSend() {
 		return nil
 	}
-	return errors.New("Not connected to FreeSWITCH Event Socket")
+	return errors.New("not connected to Event Socket")
 }
