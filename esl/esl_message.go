@@ -70,7 +70,7 @@ func (m *EslMessage) GetBodyLines() *[]string {
 // AddHeader - Used by the {@link EslMessageDecoder}.
 func (m *EslMessage) addHeader(name Name, value string) {
 	if isTraceEnabled() {
-		logging.Debugf("adding header %s %s\n", name, value)
+		logging.Debugf("adding header %s %s", name, value)
 	}
 	m.headers[name] = value
 }

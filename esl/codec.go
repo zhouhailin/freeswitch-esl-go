@@ -35,7 +35,7 @@ func decode(c gnet.Conn, m *EslMessage) error {
 	for _, lineBytes := range headerLines {
 		headerLine := string(lineBytes)
 		if isDebugEnabled() {
-			logging.Debugf("read header line %s\n", headerLine)
+			logging.Debugf("read header line %s", headerLine)
 		}
 		if len(headerLine) == 0 {
 			continue
@@ -59,11 +59,11 @@ func decode(c gnet.Conn, m *EslMessage) error {
 	//
 	if lv := m.GetHeaderValue(CONTENT_LENGTH); lv != "" {
 		if isDebugEnabled() {
-			logging.Debugf("have content-length, decoding body ..\n")
+			logging.Debugf("have content-length, decoding body ..")
 		}
 		l, err := strconv.Atoi(lv)
 		if err != nil {
-			logging.Errorf("Unable to get size of content-length: %s\n", lv)
+			logging.Errorf("Unable to get size of content-length: %s", lv)
 			return err
 		}
 		m.contentLength = l
@@ -72,7 +72,7 @@ func decode(c gnet.Conn, m *EslMessage) error {
 		}
 		bodyBytes := buf[totalLen : totalLen+l]
 		if isDebugEnabled() {
-			logging.Debugf("read %d body bytes\n", len(bodyBytes))
+			logging.Debugf("read %d body bytes", len(bodyBytes))
 		}
 		if len(bodyBytes) > 0 {
 			bodyStr := string(bodyBytes)
@@ -82,7 +82,7 @@ func decode(c gnet.Conn, m *EslMessage) error {
 			for _, bodyLine := range strings.Split(bodyStr, LINE_TERMINATOR) {
 				m.addBodyLine(bodyLine)
 				if isTraceEnabled() {
-					logging.Debugf("read body line %s\n", bodyLine)
+					logging.Debugf("read body line %s", bodyLine)
 				}
 			}
 		}

@@ -45,13 +45,13 @@ func (l ProtocolListener) authResponseReceived(c *Client, response *CommandRespo
 	c.authenticated = response.IsOk()
 	c.authenticationResponse = response
 	if isDebugEnabled() {
-		logging.Debugf("Auth response success=%s, message=[%s]\n", strconv.FormatBool(c.authenticated), response.GetReplyText())
+		logging.Debugf("Auth response success=%s, message=[%s]", strconv.FormatBool(c.authenticated), response.GetReplyText())
 	}
 }
 
 func (l ProtocolListener) eventReceived(c *Client, event *EslEvent) {
 	if isDebugEnabled() {
-		logging.Debugf("Event received %s\n", event.ToString())
+		logging.Debugf("Event received %s", event.ToString())
 	}
 	if c.eventListeners == nil || len(c.eventListeners) == 0 {
 		return
@@ -69,14 +69,14 @@ func (l ProtocolListener) eventReceived(c *Client, event *EslEvent) {
 			for i, listener := range c.eventListeners {
 				err := listener.BackgroundJobResultReceived(event)
 				if err != nil {
-					logging.Errorf("%d Error caught notifying listener of job result %s: %v\n", i, event.ToString(), err)
+					logging.Errorf("%d Error caught notifying listener of job result %s: %v", i, event.ToString(), err)
 				}
 			}
 		} else {
 			for i, listener := range c.eventListeners {
 				err := listener.EventReceived(event)
 				if err != nil {
-					logging.Errorf("%d Error caught notifying listener of event %s: %v\n", i, event.ToString(), err)
+					logging.Errorf("%d Error caught notifying listener of event %s: %v", i, event.ToString(), err)
 				}
 			}
 		}
@@ -85,7 +85,7 @@ func (l ProtocolListener) eventReceived(c *Client, event *EslEvent) {
 
 func (l ProtocolListener) disconnected(c *Client) {
 	if isInfoEnabled() {
-		logging.Infof("Disconnected ..\n")
+		logging.Infof("Disconnected ..")
 	}
 }
 
@@ -123,7 +123,7 @@ func (client *Client) AddConnectionListener(listener IEslConnectionListener) {
 // OnOpen is called when a new connection is opened.
 func (client *Client) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	if isTraceEnabled() {
-		logging.Debugf("OnOpen: %v\n", c.RemoteAddr())
+		logging.Debugf("OnOpen: %v", c.RemoteAddr())
 	}
 	return nil, gnet.None
 }
@@ -143,7 +143,7 @@ func (client *Client) OnTraffic(c gnet.Conn) (action gnet.Action) {
 				// Not enough data for a complete message, wait for more
 				return gnet.None
 			}
-			logging.Errorf("Decode error: %v\n", err)
+			logging.Errorf("Decode error: %v", err)
 			return gnet.Close
 		}
 		// Process message in a goroutine to avoid blocking the event loop
@@ -158,7 +158,7 @@ func (client *Client) OnClose(c gnet.Conn, err error) (action gnet.Action) {
 		return gnet.Close
 	}
 	client.active = false
-	logging.Infof("[%v] connection closed\n", c.RemoteAddr())
+	logging.Infof("[%v] connection closed", c.RemoteAddr())
 	close(client.msg)
 	// Notify connection is disconnect
 	if client.connectionListeners != nil && len(client.connectionListeners) > 0 {
@@ -176,7 +176,7 @@ func (client *Client) OnClose(c gnet.Conn, err error) (action gnet.Action) {
 func (client *Client) Connect() error {
 	if client.CanSend() {
 		if isInfoEnabled() {
-			logging.Infof("Client is connected, will close first.\n")
+			logging.Infof("Client is connected, will close first.")
 		}
 		_, err := client.Close()
 		if err != nil {
@@ -265,10 +265,10 @@ func (client *Client) Connect() error {
 func (client *Client) canReconnect() {
 	if options.AutoReconnection && options.ReconnectIntervalSeconds > 0 {
 		time.AfterFunc(time.Duration(options.ReconnectIntervalSeconds)*time.Second, func() {
-			logging.Infof("Reconnecting ...\n")
+			logging.Infof("Reconnecting ...")
 			err := client.Connect()
 			if err != nil {
-				logging.Errorf("Reconnection failure, cause %v\n", err)
+				logging.Errorf("Reconnection failure, cause %v", err)
 			}
 		})
 	}
