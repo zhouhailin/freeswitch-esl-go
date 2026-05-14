@@ -15,7 +15,7 @@
 ## Quick Start
 
 ```
-go get -u github.com/zhouhailin/freeswitch-esl-go
+go get -u github.com/zhouhailin/freeswitch-esl-go@netpoll
 ```
 
 ```go
